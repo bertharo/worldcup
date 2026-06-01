@@ -36,13 +36,15 @@ export default function Dashboard() {
       setSelectedTeamId(teamId);
       setIntelLoading(true);
       try {
-        const res = await fetch(`/api/team?id=${teamId}`);
+        const res = await fetch(
+          `/api/team?id=${teamId}&simulate=${isSimulate ? "1" : "0"}`
+        );
         setIntel(await res.json());
       } finally {
         setIntelLoading(false);
       }
     },
-    []
+    [isSimulate]
   );
 
   const handleCloseSheet = useCallback(() => {
@@ -85,7 +87,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex-1 py-6">
+      <main className="py-6 pb-4">
         {tab === "groups" && (
           <GroupsTab
             groups={data?.groups ?? []}

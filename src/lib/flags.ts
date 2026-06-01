@@ -57,10 +57,29 @@ export function resolveFlagCode(tla: string): string {
   return COUNTRY_META[tla]?.flagCode ?? tla.toLowerCase();
 }
 
-/** Same-origin flag URL (proxied) — avoids CDN/ad-blocker issues in the browser. */
-export function flagUrl(tla: string, width = 80): string {
-  const flagCode = resolveFlagCode(tla);
-  return `/api/flag?code=${encodeURIComponent(flagCode)}&w=${width}`;
+/** Unicode subregional flags (England, Scotland). */
+const SUBREGIONAL_EMOJI: Record<string, string> = {
+  "gb-eng": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+  "gb-sct": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}",
+};
+
+function isoToEmoji(iso: string): string {
+  if (SUBREGIONAL_EMOJI[iso]) return SUBREGIONAL_EMOJI[iso];
+  if (iso.length !== 2) return "🏳️";
+  return String.fromCodePoint(
+    ...iso.toUpperCase().split("").map((c) => 127397 + c.charCodeAt(0))
+  );
+}
+
+/** Unicode flag emoji for a FIFA TLA — no external images. */
+export function flagEmoji(tla: string): string {
+  const code = resolveFlagCode(tla);
+  return isoToEmoji(code);
+}
+
+/** @deprecated Use flagEmoji — kept for crest field compatibility */
+export function flagUrl(tla: string, _width = 80): string {
+  return flagEmoji(tla);
 }
 
 export function fifaName(tla: string, fallback: string): string {

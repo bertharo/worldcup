@@ -28,34 +28,42 @@ export default function GroupsTab({
     setActiveIndex(Math.min(Math.max(index, 0), groups.length - 1));
   }, [groups.length]);
 
+  const goToGroup = (i: number) => {
+    scrollRef.current?.scrollTo({
+      left: i * (scrollRef.current?.clientWidth ?? 0),
+      behavior: "smooth",
+    });
+    setActiveIndex(i);
+  };
+
   if (loading) {
     return (
-      <div className="px-4 pt-2">
-        <Skeleton className="mb-6 h-8 w-48" />
+      <div className="px-4">
+        <Skeleton className="mb-6 h-8 w-full" />
         <Skeleton className="h-[22rem] w-full rounded-card" />
       </div>
     );
   }
 
   return (
-    <div className="px-4 pt-2">
-      <div className="mb-6 flex flex-wrap justify-center gap-3">
+    <div>
+      <div
+        className="snap-carousel mb-6 flex gap-8 overflow-x-auto scroll-smooth px-4 pb-1"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         {groups.map((g, i) => (
           <button
             key={g.letter}
             type="button"
-            onClick={() => {
-              scrollRef.current?.scrollTo({
-                left: i * scrollRef.current.clientWidth,
-                behavior: "smooth",
-              });
-              setActiveIndex(i);
-            }}
-            className={`tap-target min-h-[44px] min-w-[44px] rounded-card px-4 text-sm font-medium transition-colors ${
-              i === activeIndex ? "text-accent" : "text-muted"
+            onClick={() => goToGroup(i)}
+            className={`relative shrink-0 pb-2 text-sm font-medium transition-colors ${
+              i === activeIndex ? "text-white" : "text-muted"
             }`}
           >
             {g.letter}
+            {i === activeIndex && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            )}
           </button>
         ))}
       </div>
@@ -63,7 +71,7 @@ export default function GroupsTab({
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        className="snap-carousel flex snap-x snap-mandatory overflow-x-auto scroll-smooth pb-2"
+        className="snap-carousel flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-4"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {groups.map((group) => (

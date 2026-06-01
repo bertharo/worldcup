@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Flag from "./Flag";
 import PitchFormationMobile from "./PitchFormationMobile";
-import { formatKickoff, formatShortDate } from "@/lib/format";
+import { flagEmoji } from "@/lib/flags";
+import { formatKickoff, formatScoreline, formatShortDate, isLive } from "@/lib/format";
 import type { TeamIntelligence } from "@/lib/types";
 
 interface TeamBottomSheetProps {
@@ -14,10 +15,10 @@ interface TeamBottomSheetProps {
 
 const SECTIONS = ["Fixtures", "Form", "H2H", "Formation"] as const;
 
-const RESULT_STYLES = {
-  W: "border-border text-white",
-  D: "border-border text-muted",
-  L: "border-border text-muted",
+const FORM_PILL: Record<"W" | "D" | "L", string> = {
+  W: "bg-[#22c55e] text-white",
+  D: "bg-[#6B6B6B] text-white",
+  L: "bg-[#ef4444] text-white",
 };
 
 export default function TeamBottomSheet({
@@ -56,6 +57,13 @@ export default function TeamBottomSheet({
 
   if (!intel && !loading) return null;
 
+  const fixture = intel?.nextFixture;
+  const opponent = fixture
+    ? fixture.homeTeam.id === intel!.team.id
+      ? fixture.awayTeam
+      : fixture.homeTeam
+    : null;
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <button
@@ -80,13 +88,13 @@ export default function TeamBottomSheet({
         ) : (
           <>
             <header className="border-b border-border px-4 pb-4">
-              <div className="flex items-center gap-4">
-                <Flag team={intel.team} size={44} />
+              <div className="flex items-center gap-3">
+                <Flag team={intel.team} size={32} />
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight text-white">
                     {intel.team.name}
                   </h2>
-                  <p className="text-base text-muted">{intel.team.manager}</p>
+                  <p className="text-sm text-muted">{intel.team.manager}</p>
                 </div>
               </div>
               <div className="mt-4 flex gap-3 overflow-x-auto">
@@ -101,7 +109,7 @@ export default function TeamBottomSheet({
                       });
                       setSectionIndex(i);
                     }}
-                    className={`tap-target shrink-0 rounded-card px-4 py-2 text-sm font-medium ${
+                    className={`tap-target shrink-0 pb-1 text-sm font-medium ${
                       i === sectionIndex ? "text-accent" : "text-muted"
                     }`}
                   >
@@ -116,38 +124,54 @@ export default function TeamBottomSheet({
               onScroll={onSectionScroll}
               className="snap-carousel flex max-h-[60vh] snap-x snap-mandatory overflow-x-auto overflow-y-auto scroll-smooth"
             >
+              {/* Fixtures */}
               <section className="w-full shrink-0 snap-center snap-always p-4">
-                {intel.nextFixture ? (
-                  <div className="surface-card">
-                    <p className="section-label mb-4">Next fixture</p>
-                    <div className="flex items-center justify-center gap-6 py-2">
-                      <Flag team={intel.team} size={44} />
-                      <span className="text-base text-muted">vs</span>
-                      <Flag
-                        team={
-                          intel.nextFixture.awayTeam.id === intel.team.id
-                            ? intel.nextFixture.homeTeam
-                            : intel.nextFixture.awayTeam
-                        }
-                        size={44}
-                      />
+                {fixture && opponent ? (
+                  <div className="py-2">
+                    <div className="flex items-center justify-center gap-4">
+                      <span className="text-[32px] leading-none" role="img" aria-label={intel.team.name}>
+                        {flagEmoji(intel.team.tla)}
+                      </span>
+                      <span className="text-sm text-muted">vs</span>
+                      <span className="text-[32px] leading-none" role="img" aria-label={opponent.name}>
+                        {flagEmoji(opponent.tla)}
+                      </span>
                     </div>
-                    <p className="mt-4 text-center text-base font-medium text-white">
-                      {intel.nextFixture.awayTeam.id === intel.team.id
-                        ? intel.nextFixture.homeTeam.name
-                        : intel.nextFixture.awayTeam.name}
+
+                    <p className="mt-4 text-center text-[28px] font-bold leading-tight text-white">
+                      {fixture.status === "FINISHED" &&
+                      fixture.score.home !== null &&
+                      fixture.score.away !== null
+                        ? formatScoreline(fixture.score.home, fixture.score.away)
+                        : isLive(fixture.status) &&
+                            fixture.score.home !== null &&
+                            fixture.score.away !== null
+                          ? formatScoreline(fixture.score.home, fixture.score.away)
+                          : formatKickoff(fixture.utcDate)}
                     </p>
-                    <p className="mt-2 text-center text-base text-muted">
-                      {formatKickoff(intel.nextFixture.utcDate)}
+
+                    {isLive(fixture.status) && (
+                      <p className="mt-1 text-center text-xs font-medium text-accent">LIVE</p>
+                    )}
+
+                    {(fixture.venue || fixture.city) && (
+                      <p className="mt-2 text-center text-sm text-muted">
+                        {[fixture.venue, fixture.city].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+
+                    <p className="mt-4 text-center text-base text-white">
+                      {opponent.name}
                     </p>
                   </div>
                 ) : (
                   <p className="text-base text-muted">No upcoming fixture</p>
                 )}
-                <div className="mt-6 surface-card">
-                  <p className="section-label mb-3">Key player</p>
+
+                <div className="mt-8 border-t border-border pt-4">
+                  <p className="mb-2 text-xs text-muted">Key player</p>
                   <p className="text-base font-semibold text-white">{intel.keyPlayer.name}</p>
-                  <div className="mt-3 flex gap-6 text-base text-muted">
+                  <div className="mt-2 flex gap-6 text-sm text-muted">
                     <span>
                       <strong className="tabular-nums text-white">{intel.keyPlayer.goals}</strong> goals
                     </span>
@@ -161,52 +185,71 @@ export default function TeamBottomSheet({
                 </div>
               </section>
 
+              {/* Form */}
               <section className="w-full shrink-0 snap-center snap-always p-4">
-                <p className="section-label mb-4">Form guide</p>
                 {intel.formGuide.length === 0 ? (
                   <p className="text-base text-muted">No recent results</p>
                 ) : (
-                  <div className="flex flex-col gap-3">
+                  <div className="divide-y divide-border">
                     {intel.formGuide.map((f, i) => (
                       <div
                         key={i}
-                        className={`flex items-center justify-between rounded-card border p-4 ${RESULT_STYLES[f.result]}`}
+                        className="flex items-center gap-3 py-3"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-base font-semibold">{f.result}</span>
-                          <Flag team={f.opponent} size={28} />
-                          <span className="text-base">{f.opponent.tla}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="tabular-nums text-base font-medium">{f.score}</p>
-                          <p className="text-sm text-muted">
-                            {f.homeAway} · {f.competition}
-                          </p>
-                        </div>
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${FORM_PILL[f.result]}`}
+                        >
+                          {f.result}
+                        </span>
+                        <Flag team={f.opponent} size={24} />
+                        <span className="min-w-0 flex-1 truncate text-base text-white">
+                          {f.opponent.name}
+                        </span>
+                        <span className="tabular-nums shrink-0 text-base font-medium text-white">
+                          {f.score}
+                        </span>
+                        <span className="shrink-0 text-sm text-muted">{f.homeAway}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </section>
 
+              {/* H2H */}
               <section className="w-full shrink-0 snap-center snap-always p-4">
-                <p className="section-label mb-4">Head-to-head</p>
-                <div className="flex flex-col gap-3">
-                  {intel.headToHead.map((m, i) => (
-                    <div
-                      key={i}
-                      className={`rounded-card border p-4 ${RESULT_STYLES[m.result]}`}
-                    >
-                      <p className="text-sm text-muted">{formatShortDate(m.date)}</p>
-                      <p className="tabular-nums my-2 text-xl font-semibold tracking-tight">
-                        {m.score}
-                      </p>
-                      <p className="text-base text-muted">{m.competition}</p>
-                    </div>
-                  ))}
+                <div className="divide-y divide-border">
+                  {intel.headToHead.map((m, i) => {
+                    const winner =
+                      m.homeTeam.tla === intel.team.tla && m.result === "W"
+                        ? m.homeTeam
+                        : m.awayTeam.tla === intel.team.tla && m.result === "W"
+                          ? m.awayTeam
+                          : m.result === "D"
+                            ? null
+                            : m.homeTeam.tla === intel.team.tla
+                              ? m.awayTeam
+                              : m.homeTeam;
+
+                    return (
+                      <div key={i} className="py-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-muted">{formatShortDate(m.date)}</p>
+                          {winner && <Flag team={winner} size={20} />}
+                        </div>
+                        <p className="tabular-nums mt-1 text-center text-lg font-bold text-white">
+                          {m.score}
+                        </p>
+                        <p className="mt-0.5 text-center text-xs text-muted">{m.competition}</p>
+                        <p className="mt-1 text-center text-xs text-muted">
+                          {m.homeTeam.name} vs {m.awayTeam.name}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
 
+              {/* Formation */}
               <section className="w-full shrink-0 snap-center snap-always p-4">
                 <PitchFormationMobile
                   formation={intel.team.formation}

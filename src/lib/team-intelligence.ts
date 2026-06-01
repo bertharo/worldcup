@@ -1,7 +1,12 @@
 import type { TeamIntelligence } from "./types";
 import { buildSquad } from "./formation-layout";
 import { getTeamSquad, SQUAD_DATA_UPDATED } from "./team-squads";
-import { getGroupOpponents, getGroupLetter, GROUP_KICKOFFS, OFFICIAL_GROUPS_2026 } from "./tournament-data";
+import {
+  generateFormGuide,
+  generateHeadToHead,
+  GROUP_VENUES,
+} from "./team-intel-generators";
+import { getGroupLetter, getGroupOpponents, GROUP_KICKOFFS, OFFICIAL_GROUPS_2026 } from "./tournament-data";
 import { ALL_TEAMS_BY_TLA, ALL_TEAMS_MAP } from "./mock-data";
 
 const MATCHDAY_PAIRINGS = [
@@ -21,18 +26,25 @@ function findNextGroupFixtureTla(tla: string) {
   const involves = home === tla || away === tla;
   const h = involves ? home : tlas[MATCHDAY_PAIRINGS[0][1][0]];
   const aw = involves ? away : tlas[MATCHDAY_PAIRINGS[0][1][1]];
+  const venueInfo = GROUP_VENUES[letter] ?? { venue: "World Cup Stadium", city: "TBD" };
   return {
     home: ALL_TEAMS_BY_TLA[h],
     away: ALL_TEAMS_BY_TLA[aw],
     utcDate: base,
     group: `GROUP_${letter}`,
+    venue: venueInfo.venue,
+    city: venueInfo.city,
   };
 }
 
-export function getTeamIntelligence(teamId: number): TeamIntelligence | null {
+export function getTeamIntelligence(
+  teamId: number,
+  options: { simulate?: boolean } = {}
+): TeamIntelligence | null {
   const t = ALL_TEAMS_MAP[teamId];
   if (!t) return null;
 
+  const simulate = options.simulate ?? false;
   const squadData = getTeamSquad(t.tla);
   const formation = squadData?.formation ?? t.formation;
   const manager = squadData?.manager ?? t.manager;
@@ -40,7 +52,6 @@ export function getTeamIntelligence(teamId: number): TeamIntelligence | null {
   const lineup = squadData?.lineup ?? [];
 
   const team = { ...t, formation, manager };
-  const opponents = getGroupOpponents(t.tla);
   const next = findNextGroupFixtureTla(t.tla);
 
   return {
@@ -57,19 +68,14 @@ export function getTeamIntelligence(teamId: number): TeamIntelligence | null {
           awayTeam: next.away,
           score: { home: null, away: null },
           competition: "FIFA World Cup 2026",
+          venue: next.venue,
+          city: next.city,
         }
       : null,
-    headToHead: opponents.slice(0, 3).map((opp, i) => ({
-      date: `202${4 + i}-0${i + 3}-15`,
-      score: "—",
-      competition: "International Friendly",
-      result: "D" as const,
-      homeTeam: i % 2 === 0 ? team : ALL_TEAMS_BY_TLA[opp],
-      awayTeam: i % 2 === 0 ? ALL_TEAMS_BY_TLA[opp] : team,
-    })),
+    headToHead: generateHeadToHead(team),
     squad: lineup.length > 0 ? buildSquad(formation, lineup) : [],
-    formGuide: [],
-    keyPlayer: { ...keyPlayer, minutes: 0 },
+    formGuide: generateFormGuide(team, simulate),
+    keyPlayer: { ...keyPlayer, minutes: simulate ? 450 : 0 },
   };
 }
 
