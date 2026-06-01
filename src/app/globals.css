@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #000000;
+    --surface: #111111;
+    --border: #1f1f1f;
+    --accent: #2563eb;
+    --muted: #6b6b6b;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--bg);
+    color: #ffffff;
+    font-size: 16px;
+    line-height: 1.5;
+    font-family: var(--font-sans), Inter, system-ui, sans-serif;
+    font-weight: 400;
+  }
+}
+
+@layer components {
+  .section-label {
+    @apply text-xs font-medium tracking-wide text-muted;
+  }
+
+  .surface-card {
+    @apply rounded-card border border-border bg-surface p-4;
+  }
+
+  .bg-bg {
+    background-color: var(--bg);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .tap-target-row {
+    @apply min-h-[44px];
+  }
+
+  .pitch {
+    background-color: #0a0a0a;
+    border: 1px solid var(--border);
+  }
+
+  .snap-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .snap-carousel::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-sheet-up {
+  animation: sheetUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes scorePop {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-score-pop {
+  animation: scorePop 0.3s ease-out forwards;
+}
+
+@keyframes cardFlash {
+  0%,
+  100% {
+    border-color: #1f1f1f;
+  }
+  40% {
+    border-color: #2563eb;
+  }
+}
+
+.animate-card-flash {
+  animation: cardFlash 0.8s ease-in-out forwards;
+}
+
+@keyframes rowPop {
+  0% {
+    background-color: rgba(37, 99, 235, 0);
+  }
+  30% {
+    background-color: rgba(37, 99, 235, 0.08);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-row-pop {
+  animation: rowPop 0.8s ease-in-out forwards;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
