@@ -53,10 +53,14 @@ export const COUNTRY_META: Record<
   UZB: { fifaName: "Uzbekistan", flagCode: "uz", primary: "#1EB53A", secondary: "#0099B5" },
 };
 
-export function flagUrl(code: string, width = 80): string {
-  const meta = COUNTRY_META[code];
-  const flagCode = meta?.flagCode ?? code.toLowerCase();
-  return `https://flagcdn.com/w${width}/${flagCode}.png`;
+export function resolveFlagCode(tla: string): string {
+  return COUNTRY_META[tla]?.flagCode ?? tla.toLowerCase();
+}
+
+/** Same-origin flag URL (proxied) — avoids CDN/ad-blocker issues in the browser. */
+export function flagUrl(tla: string, width = 80): string {
+  const flagCode = resolveFlagCode(tla);
+  return `/api/flag?code=${encodeURIComponent(flagCode)}&w=${width}`;
 }
 
 export function fifaName(tla: string, fallback: string): string {
