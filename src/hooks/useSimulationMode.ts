@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getGroupTeamAssignments } from "@/lib/mock-data";
 import {
   advanceSimulation,
@@ -16,10 +16,9 @@ const STEP_DELAY_MS = 2200;
 const FLASH_DURATION_MS = 900;
 
 export function useSimulationMode(liveData: DashboardData | null) {
-  const [mode, setMode] = useState<DashboardMode>("simulate");
+  const [mode, setMode] = useState<DashboardMode>("live");
   const [simState, setSimState] = useState<SimulationState | null>(null);
   const [activeFlashKeys, setActiveFlashKeys] = useState<string[]>([]);
-  const initializedRef = useRef(false);
 
   const initSimulation = useCallback(() => {
     const assignments = getGroupTeamAssignments();
@@ -33,13 +32,6 @@ export function useSimulationMode(liveData: DashboardData | null) {
     setSimState(createSimulationState(assignments, teams));
     setActiveFlashKeys([]);
   }, [liveData]);
-
-  useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      initSimulation();
-    }
-  }, [initSimulation]);
 
   const simStep = simState?.step ?? 0;
   const simComplete = simState?.complete ?? false;
